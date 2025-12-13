@@ -26,6 +26,20 @@ const fullTitle = `${title} | Mycraft Network`;
     <title>{fullTitle}</title>
     <link rel="preconnect" href="https://render.crafty.gg" />
     <style set:html={themeCSS}></style>
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    <meta
+      property="og:description"
+      content={description}
+    />
+    <meta property="og:url" content={Astro.site} />
+    <meta property="og:image" content="/og.webp" />
+
+    <!-- Recomendado -->
+    <meta property="og:site_name" content="Mycraft Network Sanciones" />
+    <meta property="og:locale" content="es_ES" />
+
   </head>
   <body class="min-h-screen bg-black text-white font-inter antialiased">
     <div class="fixed inset-0 -z-10 overflow-hidden">
@@ -134,7 +148,6 @@ const fullTitle = `${title} | Mycraft Network`;
     width: 100%;
     height: 100%;
   }
-
 
   .font-inter {
     font-family: "Inter", system-ui, sans-serif;
@@ -415,7 +428,8 @@ const fullTitle = `${title} | Mycraft Network`;
       #f4c587,
       #d6d3e9 60.42%,
       #99d2ec 95.31%
-    );    -webkit-background-clip: text;
+    );
+    -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }

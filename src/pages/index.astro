@@ -1,11 +1,128 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
+import Layout from "../layouts/Layout.astro";
+import PunishmentCard from "../components/PunishmentCard.astro";
+import Pagination from "../components/Pagination.astro";
+import EmptyState from "../components/EmptyState.astro";
+import { getBans, getGlobalStats, getPlayerName } from "../lib/queries";
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+const page = Math.max(1, parseInt(Astro.url.searchParams.get("page") || "1"));
+const perPage = 15;
+
+let bansResult;
+let stats;
+let error = null;
+
+try {
+  [bansResult, stats] = await Promise.all([
+    getBans(page, perPage, true),
+    getGlobalStats(),
+  ]);
+} catch (e) {
+  console.error("Error fetching data:", e);
+  error = e;
+  bansResult = {
+    data: [],
+    total: 0,
+    page: 1,
+    perPage,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false,
+  };
+  stats = {
+    totalBans: 0,
+    activeBans: 0,
+    totalMutes: 0,
+    activeMutes: 0,
+    totalWarnings: 0,
+    totalKicks: 0,
+  };
+}
+
+const bansWithNames = await Promise.all(
+  bansResult.data.map(async (ban) => ({
+    ...ban,
+    playerName: (await getPlayerName(ban.uuid || "")) || "Desconocido",
+  }))
+);
 ---
 
-<Layout>
-	<Welcome />
+<Layout
+  title="Sanciones"
+  description="Lista de jugadores baneados en Mycraft Network"
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <section class="mb-8">
+      <div class="text-center mb-8 animate-fade-in">
+        <h1
+          class="text-4xl sm:text-5xl font-clash font-[550] gradient-text mb-3"
+        >
+          Sistema de Sanciones
+        </h1>
+        <p class="text-zinc-400 text-md sm:text-lg max-w-2xl mx-auto">
+          Consulta todas las sanciones aplicadas en el servidor. Transparencia y
+          justicia para nuestra comunidad.
+        </p>
+      </div>
+    </section>
+
+    <!-- Main Content -->
+    <section>
+      <!-- Section Header -->
+      <div
+        class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-3"
+      >
+        <div>
+          <h2
+            class="text-2xl sm:text-3xl font-clash font-semibold text-white flex items-center gap-3"
+          >
+            Lista de Baneos
+          </h2>
+        </div>
+
+        <!-- Active Bans Badge -->
+        <div
+          class="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20 w-fit"
+        >
+          <span class="relative flex h-2 w-2">
+            <span
+              class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"
+            ></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"
+            ></span>
+          </span>
+          <span class="text-sm text-red-400 font-medium">
+            {stats.activeBans} activos
+          </span>
+        </div>
+      </div>
+
+      {
+        error ? (
+          <EmptyState
+            type="error"
+            message="Error al cargar los baneos. Por favor intenta de nuevo."
+          />
+        ) : bansWithNames.length === 0 ? (
+          <EmptyState type="empty" message="No hay baneos para mostrar." />
+        ) : (
+          <div class="space-y-3">
+            {bansWithNames.map((ban, index) => (
+              <div class={`scroll-reveal stagger-${Math.min(index + 1, 10)}`}>
+                <PunishmentCard punishment={ban} type="ban" />
+              </div>
+            ))}
+          </div>
+        )
+      }
+
+      <div class="mt-8">
+        <Pagination
+          currentPage={bansResult.page}
+          totalPages={bansResult.totalPages}
+          baseUrl={Astro.url.pathname}
+        />
+      </div>
+    </section>
+  </div>
 </Layout>

@@ -1,0 +1,111 @@
+---
+interface Props {
+  placeholder?: string;
+  value?: string;
+  autofocus?: boolean;
+  size?: 'sm' | 'md' | 'lg';
+}
+
+const { 
+  placeholder = 'Buscar jugador...', 
+  value = '',
+  autofocus = false,
+  size = 'md'
+} = Astro.props;
+
+const sizeClasses = {
+  sm: 'px-4 py-2 pl-10 text-sm',
+  md: 'px-5 py-3 pl-12 text-base',
+  lg: 'px-6 py-4 pl-14 text-lg',
+};
+
+const iconSizes = {
+  sm: 'w-4 h-4 left-3',
+  md: 'w-5 h-5 left-4',
+  lg: 'w-5 h-5 left-5',
+};
+---
+
+<div class="search-container relative">
+  <form action="/search" method="GET" class="relative">
+    <input
+      type="text"
+      name="q"
+      value={value}
+      placeholder={placeholder}
+      autofocus={autofocus}
+      autocomplete="off"
+      class:list={[
+        "w-full bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder-zinc-500",
+        "focus:outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/10",
+        "transition-all duration-200",
+        sizeClasses[size]
+      ]}
+      id="search-input"
+    />
+    <svg 
+      class:list={[
+        "absolute top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none",
+        iconSizes[size]
+      ]} 
+      fill="none" 
+      stroke="currentColor" 
+      viewBox="0 0 24 24"
+    >
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </svg>
+    
+    <button
+      type="button"
+      class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-zinc-500 hover:text-white rounded-lg opacity-0 transition-opacity"
+      id="clear-button"
+      aria-label="Limpiar búsqueda"
+    >
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+  </form>
+
+  <div 
+    class="absolute top-full left-0 right-0 mt-2 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl overflow-hidden z-50 hidden"
+    id="search-suggestions"
+  >
+    <div class="p-2 text-sm text-zinc-400 border-b border-zinc-800">
+      Presiona Enter para buscar
+    </div>
+    <div id="suggestions-list" class="max-h-64 overflow-y-auto">
+    </div>
+  </div>
+</div>
+
+<script>
+  const input = document.getElementById('search-input') as HTMLInputElement;
+  const clearButton = document.getElementById('clear-button');
+  const suggestions = document.getElementById('search-suggestions');
+
+  input?.addEventListener('input', () => {
+    if (clearButton) {
+      clearButton.style.opacity = input.value ? '1' : '0';
+    }
+  });
+
+  clearButton?.addEventListener('click', () => {
+    if (input) {
+      input.value = '';
+      input.focus();
+      if (clearButton) clearButton.style.opacity = '0';
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      input?.focus();
+    }
+    
+    if (e.key === 'Escape' && suggestions) {
+      suggestions.classList.add('hidden');
+    }
+  });
+</script>

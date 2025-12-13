@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <!-- Console/Terminal icon -->
+  <rect x="4" y="8" width="56" height="48" rx="4" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+  <rect x="8" y="12" width="48" height="40" rx="2" fill="#0a0a0a"/>
+  
+  <!-- Command prompt -->
+  <text x="14" y="32" font-family="monospace" font-size="12" fill="#10b981">$</text>
+  <rect x="24" y="24" width="24" height="10" rx="1" fill="#10b981" opacity="0.8"/>
+  
+  <!-- Cursor blink -->
+  <rect x="50" y="24" width="3" height="10" fill="#10b981">
+    <animate attributeName="opacity" values="1;0;1" dur="1s" repeatCount="indefinite"/>
+  </rect>
+  
+  <!-- Second line -->
+  <rect x="14" y="38" width="16" height="6" rx="1" fill="#444"/>
+</svg>

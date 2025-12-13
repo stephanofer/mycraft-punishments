@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <!-- Steve head - simple pixelated style -->
+  <rect width="64" height="64" fill="#b5835a"/>
+  
+  <!-- Hair -->
+  <rect x="0" y="0" width="64" height="16" fill="#4a3728"/>
+  <rect x="0" y="16" width="8" height="16" fill="#4a3728"/>
+  <rect x="56" y="16" width="8" height="16" fill="#4a3728"/>
+  
+  <!-- Eyes -->
+  <rect x="12" y="24" width="16" height="8" fill="white"/>
+  <rect x="36" y="24" width="16" height="8" fill="white"/>
+  <rect x="20" y="24" width="8" height="8" fill="#5d4037"/>
+  <rect x="44" y="24" width="8" height="8" fill="#5d4037"/>
+  
+  <!-- Nose -->
+  <rect x="28" y="32" width="8" height="8" fill="#9a7456"/>
+  
+  <!-- Mouth -->
+  <rect x="20" y="44" width="24" height="4" fill="#8b6b4a"/>
+</svg>

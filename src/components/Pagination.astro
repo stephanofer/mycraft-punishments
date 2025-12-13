@@ -1,0 +1,114 @@
+---
+import { generatePaginationArray } from '../lib/utils';
+
+interface Props {
+  currentPage: number;
+  totalPages: number;
+  baseUrl: string;
+  className?: string;
+}
+
+const { currentPage, totalPages, baseUrl, className = '' } = Astro.props;
+
+const mobilePages = generatePaginationArray(currentPage, totalPages, 3);
+const desktopPages = generatePaginationArray(currentPage, totalPages, 7);
+
+function getPageUrl(page: number): string {
+  const url = new URL(baseUrl, Astro.url);
+  url.searchParams.set('page', page.toString());
+  return url.pathname + url.search;
+}
+---
+
+{totalPages > 1 && (
+  <nav class:list={["flex flex-col sm:flex-row items-center justify-center gap-4", className]} aria-label="Paginación">
+    <div class="flex items-center justify-center gap-1">
+      <!-- Previous Button -->
+      {currentPage > 1 ? (
+        <a
+          href={getPageUrl(currentPage - 1)}
+          class="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-800 hover:border-zinc-700 transition-all"
+          aria-label="Página anterior"
+        >
+          <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </a>
+      ) : (
+        <span class="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-zinc-900/50 border border-zinc-800/50 text-zinc-600 cursor-not-allowed">
+          <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </span>
+      )}
+
+      <div class="flex items-center gap-1 sm:hidden">
+        {mobilePages.map((page) => (
+          page === '...' ? (
+            <span class="flex items-center justify-center w-8 h-9 text-zinc-500 text-sm">
+              ⋯
+            </span>
+          ) : (
+            <a
+              href={getPageUrl(page)}
+              class:list={[
+                "flex items-center justify-center w-9 h-9 rounded-xl text-sm font-medium transition-all",
+                page === currentPage
+                  ? "bg-gradient-to-br from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-500/20"
+                  : "bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-800"
+              ]}
+              aria-current={page === currentPage ? 'page' : undefined}
+            >
+              {page}
+            </a>
+          )
+        ))}
+      </div>
+
+      <div class="hidden sm:flex items-center gap-1">
+        {desktopPages.map((page) => (
+          page === '...' ? (
+            <span class="flex items-center justify-center w-10 h-10 text-zinc-500">
+              ...
+            </span>
+          ) : (
+            <a
+              href={getPageUrl(page)}
+              class:list={[
+                "flex items-center justify-center w-10 h-10 rounded-xl text-sm font-medium transition-all",
+                page === currentPage
+                  ? "bg-gradient-to-br from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-500/20"
+                  : "bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-800 hover:border-zinc-700"
+              ]}
+              aria-current={page === currentPage ? 'page' : undefined}
+            >
+              {page}
+            </a>
+          )
+        ))}
+      </div>
+
+      {currentPage < totalPages ? (
+        <a
+          href={getPageUrl(currentPage + 1)}
+          class="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-800 hover:border-zinc-700 transition-all"
+          aria-label="Página siguiente"
+        >
+          <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </a>
+      ) : (
+        <span class="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-zinc-900/50 border border-zinc-800/50 text-zinc-600 cursor-not-allowed">
+          <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </span>
+      )}
+    </div>
+
+    <div class="text-sm text-zinc-500">
+      Página <span class="text-white font-medium">{currentPage}</span> de <span class="text-white font-medium">{totalPages}</span>
+    </div>
+  </nav>
+)}

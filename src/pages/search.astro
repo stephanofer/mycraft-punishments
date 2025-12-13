@@ -1,0 +1,162 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PunishmentCard from '../components/PunishmentCard.astro';
+import EmptyState from '../components/EmptyState.astro';
+import { searchPlayer, searchPlayerByUuid, getPlayerHistory, getPlayerName } from '../lib/queries';
+import { isValidUuid, undashifyUuid } from '../lib/utils';
+
+const query = Astro.url.searchParams.get('q')?.trim() || '';
+const errorParam = Astro.url.searchParams.get('error');
+
+let player = null;
+let history = null;
+let error = null;
+let errorMessage = null;
+
+if (errorParam === 'not-found') {
+  errorMessage = 'El jugador o sanción que buscas no existe o no se encontró';
+} else if (errorParam) {
+  errorMessage = 'Ocurrió un error al procesar tu solicitud';
+}
+
+if (query) {
+  try {
+    if (isValidUuid(query)) {
+      const cleanUuid = undashifyUuid(query);
+      player = await searchPlayerByUuid(query);
+      if (!player) {
+        player = await searchPlayerByUuid(cleanUuid);
+      }
+    } else {
+      player = await searchPlayer(query);
+    }
+
+    if (player?.uuid) {
+      history = await getPlayerHistory(player.uuid, 1, 10);
+    }
+  } catch (e) {
+    console.error('Search error:', e);
+    error = e;
+  }
+}
+---
+
+<Layout title="Buscar" description="Buscar jugadores y sus sanciones">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="text-center mb-8 animate-fade-in">
+      <h1 class="text-3xl font-clash font-bold text-white mb-3">
+        Buscar Jugador
+      </h1>
+      <p class="text-zinc-400 max-w-lg mx-auto">
+        Busca solo por el nombre de usuario para ver el historial de sanciones
+      </p>
+    </div>
+
+    <form action="/search" method="GET" class="mb-8">
+      <div class="relative max-w-xl mx-auto">
+        <input
+          type="text"
+          name="q"
+          value={query}
+          placeholder="Escribe un nombre de usuario o UUID..."
+          class="w-full px-6 py-4 pl-14 bg-zinc-900 border border-zinc-800 rounded-2xl text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/10 transition-all text-lg"
+          autofocus
+        />
+        <svg class="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <button
+          type="submit"
+          class="absolute right-3 top-1/2 -translate-y-1/2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl text-white font-medium hover:shadow-lg hover:shadow-purple-500/20 transition-all"
+        >
+          Buscar
+        </button>
+      </div>
+    </form>
+
+    {errorMessage && (
+      <div class="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center gap-3 animate-fade-in">
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <span>{errorMessage}</span>
+      </div>
+    )}
+
+    {error ? (
+      <EmptyState type="error" message="Error al realizar la búsqueda. Por favor intenta de nuevo." />
+    ) : !query ? (
+      <div class="text-center py-16">
+        <div class="text-6xl mb-4">🔍</div>
+        <p class="text-zinc-400">Ingresa un nombre de usuario o UUID para comenzar</p>
+      </div>
+    ) : !player ? (
+      <EmptyState type="not-found" message={`No se encontró ningún jugador con "${query}"`} />
+    ) : (
+      <div class="space-y-6 animate-slide-up">
+        <a 
+          href={`/player/${player.uuid?.replace(/-/g, '')}`}
+          class="block p-6 rounded-2xl bg-zinc-900 border border-zinc-800 hover:border-purple-500/30 hover:bg-zinc-800/50 transition-all group"
+        >
+          <div class="flex items-center gap-4">
+            <div class="relative">
+              <img
+                src={`https://render.crafty.gg/2d/front/${player.uuid?.replace(/-/g, '')}`}
+                alt={player.name || 'Player'}
+                width="64"
+                height="64"
+                class="p-2 rounded-xl pixelated bg-zinc-800 group-hover:scale-105 transition-transform"
+              />
+            </div>
+            <div class="flex-1">
+              <h2 class="font-seven text-xl font-semibold text-white group-hover:text-purple-400 transition-colors">
+                {player.name}
+              </h2>
+            </div>
+            <svg class="w-6 h-6 text-zinc-600 group-hover:text-purple-400 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </a>
+
+        <!-- Recent History Preview -->
+        {history && history.data.length > 0 && (
+          <div>
+            <h3 class="text-lg font-semibold text-white mb-4">
+              Sanciones recientes ({history.total} en total)
+            </h3>
+            <div class="space-y-3">
+              {history.data.slice(0, 5).map((item) => (
+                  <PunishmentCard 
+                    punishment={item.data} 
+                    type={item.type} 
+                  />
+              ))}
+            </div>
+            
+            {history.total > 5 && (
+              <div class="mt-4 text-center">
+                <a 
+                  href={`/player/${player.uuid?.replace(/-/g, '')}`}
+                  class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700 transition-all"
+                >
+                  Ver todas las sanciones
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                  </svg>
+                </a>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    )}
+  </div>
+</Layout>
+
+<style>
+  .pixelated {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+</style>

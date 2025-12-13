@@ -1,0 +1,36 @@
+---
+interface Props {
+  message?: string;
+  type?: 'empty' | 'error' | 'not-found';
+}
+
+const { message, type = 'empty' } = Astro.props;
+
+const content = {
+  empty: {
+    icon: '📭',
+    title: 'Sin resultados',
+    description: message || 'No se encontraron sanciones para mostrar.',
+  },
+  error: {
+    icon: '⚠️',
+    title: 'Error',
+    description: message || 'Ocurrió un error al cargar los datos.',
+  },
+  'not-found': {
+    icon: '🔍',
+    title: 'No encontrado',
+    description: message || 'No se pudo encontrar lo que buscas.',
+  },
+};
+
+const c = content[type];
+---
+
+<div class="flex flex-col items-center justify-center py-16 px-4 text-center">
+  <div class="text-6xl mb-4 animate-bounce">
+    {c.icon}
+  </div>
+  <h3 class="text-xl font-semibold text-white mb-2">{c.title}</h3>
+  <p class="text-zinc-400 max-w-md">{c.description}</p>
+</div>

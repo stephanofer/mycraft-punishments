@@ -1,0 +1,161 @@
+---
+import EmptyState from '../../components/EmptyState.astro';
+import Pagination from '../../components/Pagination.astro';
+import PunishmentCard from '../../components/PunishmentCard.astro';
+import Layout from '../../layouts/Layout.astro';
+import { getPlayerName, getStaffHistory, getStaffStats } from '../../lib/queries';
+import { getSkinUrlSync, isConsoleUuid } from '../../lib/skins';
+import { CONSOLE_NAME, dashifyUuid } from '../../lib/utils';
+
+const { uuid } = Astro.params;
+
+if (!uuid) {
+  return Astro.redirect('/');
+}
+
+const normalizedUuid = dashifyUuid(uuid);
+const isConsole = isConsoleUuid(normalizedUuid);
+
+const page = Math.max(1, parseInt(Astro.url.searchParams.get('page') || '1'));
+const perPage = 15;
+
+let staffStats;
+let history;
+let error = null;
+let staffName = CONSOLE_NAME;
+
+try {
+  if (!isConsole) {
+    [staffStats, history] = await Promise.all([
+      getStaffStats(normalizedUuid),
+      getStaffHistory(normalizedUuid, page, perPage)
+    ]);
+    staffName = staffStats?.name || 'Staff';
+  } else {
+    history = await getStaffHistory(normalizedUuid, page, perPage);
+    staffStats = {
+      uuid: normalizedUuid,
+      name: CONSOLE_NAME,
+      totalBansIssued: 0,
+      totalMutesIssued: 0,
+      totalWarningsIssued: 0,
+      totalKicksIssued: 0
+    };
+  }
+} catch (e) {
+  console.error('Error fetching staff data:', e);
+  error = e;
+}
+
+if (!staffStats && !isConsole) {
+  return Astro.redirect('/');
+}
+
+const historyWithNames = await Promise.all(
+  (history?.data || []).map(async (item) => ({
+    ...item,
+    playerName: await getPlayerName(item.data.uuid || '') || 'Desconocido'
+  }))
+);
+
+const totalIssued = (staffStats?.totalBansIssued || 0) + (staffStats?.totalMutesIssued || 0) + 
+                    (staffStats?.totalWarningsIssued || 0) + (staffStats?.totalKicksIssued || 0);
+---
+
+<Layout title={`${staffName} - Staff`} description={`Sanciones emitidas por ${staffName}`}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <section class="mb-8 animate-fade-in">
+      <div class="relative rounded-3xl bg-gradient-to-br from-zinc-900 to-zinc-950 border border-zinc-800 overflow-hidden">
+        <div class="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.03)_1px,transparent_1px)] bg-[size:32px_32px]"></div>
+        
+        <div class="absolute top-0 right-0 w-96 h-96 bg-green-600/10 rounded-full blur-[100px]"></div>
+        <div class="absolute bottom-0 left-0 w-64 h-64 bg-blue-600/10 rounded-full blur-[80px]"></div>
+
+        <div class="relative p-6 sm:p-8">
+          <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+            <div class="relative group">
+              {isConsole ? (
+                <div class="w-32 h-32 rounded-2xl bg-zinc-800 flex items-center justify-center text-5xl shadow-2xl shadow-green-500/10">
+                  🖥️
+                </div>
+              ) : (
+                <img
+                  src={getSkinUrlSync(normalizedUuid)}
+                  alt={staffName}
+                  width="128"
+                  height="128"
+                  class="p-2 rounded-2xl pixelated bg-zinc-800 shadow-2xl shadow-green-500/10 group-hover:scale-105 transition-transform duration-300"
+                />
+              )}
+              
+              <div class="absolute -bottom-2 -right-2 px-3 py-1 rounded-lg bg-gradient-to-r from-green-600 to-emerald-600 text-white text-xs font-medium shadow-lg">
+                Staff
+              </div>
+            </div>
+
+            <div class="flex-1 text-center sm:text-left">
+              <h1 class="font-seven text-3xl sm:text-4xl font-clash font-bold text-white mb-2">
+                {staffName}
+              </h1>
+              <p class="text-zinc-400">
+                Miembro del equipo de moderación
+              </p>
+            </div>
+
+            <div class="text-center">
+              <div class="text-5xl font-clash font-bold text-green-400">
+                {history?.total || totalIssued}
+              </div>
+              <div class="text-sm text-zinc-500">sanciones emitidas</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-clash font-semibold text-white">
+          Sanciones Emitidas
+        </h2>
+        <span class="text-sm text-zinc-500">
+          {history?.total || 0} en total · Página {page} de {history?.totalPages || 1}
+        </span>
+      </div>
+
+      {error ? (
+        <EmptyState type="error" message="Error al cargar el historial." />
+      ) : historyWithNames.length === 0 ? (
+        <EmptyState type="empty" message="Este staff no ha emitido sanciones." />
+      ) : (
+        <div class="space-y-3">
+          {historyWithNames.map((item, index) => (
+            <div class={`scroll-reveal stagger-${Math.min(index + 1, 10)}`}>
+              <PunishmentCard 
+                punishment={item.data} 
+                type={item.type} 
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {history && history.totalPages > 1 && (
+        <div class="mt-8">
+          <Pagination 
+            currentPage={page}
+            totalPages={history.totalPages}
+            baseUrl={Astro.url.pathname}
+          />
+        </div>
+      )}
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .pixelated {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+</style>

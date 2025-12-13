@@ -1,0 +1,66 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PunishmentCard from '../components/PunishmentCard.astro';
+import Pagination from '../components/Pagination.astro';
+import EmptyState from '../components/EmptyState.astro';
+import { getWarnings, getPlayerName } from '../lib/queries';
+
+const page = Math.max(1, parseInt(Astro.url.searchParams.get('page') || '1'));
+const perPage = 15;
+
+let warningsResult;
+let error = null;
+
+try {
+  warningsResult = await getWarnings(page, perPage, true);
+} catch (e) {
+  console.error('Error fetching warnings:', e);
+  error = e;
+  warningsResult = { data: [], total: 0, page: 1, perPage, totalPages: 0, hasNext: false, hasPrev: false };
+}
+
+const warningsWithNames = await Promise.all(
+  warningsResult.data.map(async (warning) => ({
+    ...warning,
+    playerName: await getPlayerName(warning.uuid || '') || 'Desconocido'
+  }))
+);
+
+const activeWarnings = warningsResult.data.filter(w => w.active === 1).length;
+---
+
+<Layout title="Advertencias" description="Lista de advertencias emitidas en Mycraft Network">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="text-3xl font-clash font-bold text-white flex items-center gap-3">
+          Advertencias
+        </h1>
+      </div>
+    </div>
+    {error ? (
+      <EmptyState type="error" message="Error al cargar las advertencias. Por favor intenta de nuevo." />
+    ) : warningsWithNames.length === 0 ? (
+      <EmptyState type="empty" message="No hay advertencias para mostrar." />
+    ) : (
+      <div class="space-y-3">
+        {warningsWithNames.map((warning, index) => (
+          <div class={`scroll-reveal stagger-${Math.min(index + 1, 10)}`}>
+            <PunishmentCard 
+              punishment={warning} 
+              type="warning" 
+            />
+          </div>
+        ))}
+      </div>
+    )}
+
+    <div class="mt-8">
+      <Pagination 
+        currentPage={warningsResult.page}
+        totalPages={warningsResult.totalPages}
+        baseUrl={Astro.url.pathname}
+      />
+    </div>
+  </div>
+</Layout>

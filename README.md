@@ -6,6 +6,10 @@ Sistema de visualización de sanciones para servidores de Minecraft con LiteBans
 ![Tailwind](https://img.shields.io/badge/Tailwind-4.x-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
+## Vista Previa
+
+![Vista previa de Mycraft Punishments](/public/images/preview.png)
+
 ## Características
 
 - **Totalmente responsive** para móviles y tablets

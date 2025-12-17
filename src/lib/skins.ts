@@ -3,8 +3,8 @@
  * Soporta integración con SkinRestorer API
  */
 
-const CRAFTY_API_URL = 'https://render.crafty.gg/2d/front';
-const SKIN_API_URL = import.meta.env.SKIN_API_URL || '';
+const CRAFTY_API_URL = "https://render.crafty.gg/2d/front";
+const SKIN_API_URL = import.meta.env.SKIN_API_URL || "";
 
 // Cache simple en memoria para evitar múltiples requests a la API
 const skinCache = new Map<string, { url: string; timestamp: number }>();
@@ -18,9 +18,9 @@ async function getSkinFromAPI(uuid: string): Promise<string | null> {
 
   try {
     // Limpiar UUID (remover guiones)
-    const cleanUuid = uuid.replace(/-/g, '');
+    const cleanUuid = uuid.replace(/-/g, "");
     const apiUrl = `${SKIN_API_URL}/${cleanUuid}`;
-    
+
     const response = await fetch(apiUrl, {
       signal: AbortSignal.timeout(3000), // 3 segundos timeout
     });
@@ -30,14 +30,14 @@ async function getSkinFromAPI(uuid: string): Promise<string | null> {
     }
 
     const data = await response.json();
-    
+
     // SkinRestorer puede devolver diferentes formatos
     if (data.skinUrl) {
       return data.skinUrl;
     } else if (data.textures?.SKIN?.url) {
       return data.textures.SKIN.url;
     }
-    
+
     return null;
   } catch (error) {
     // Error silencioso, usar fallback
@@ -54,7 +54,7 @@ export async function getSkinUrl(uuid: string): Promise<string> {
   }
 
   // Limpiar UUID
-  const cleanUuid = uuid.replace(/-/g, '');
+  const cleanUuid = uuid.replace(/-/g, "");
 
   // Verificar cache
   const cached = skinCache.get(cleanUuid);
@@ -64,7 +64,7 @@ export async function getSkinUrl(uuid: string): Promise<string> {
 
   // Intentar obtener desde API de SkinRestorer
   const skinUrl = await getSkinFromAPI(cleanUuid);
-  
+
   if (skinUrl) {
     skinCache.set(cleanUuid, { url: skinUrl, timestamp: Date.now() });
     return skinUrl;
@@ -73,7 +73,7 @@ export async function getSkinUrl(uuid: string): Promise<string> {
   // Fallback a Crafty
   const craftyUrl = `${CRAFTY_API_URL}/${cleanUuid}`;
   skinCache.set(cleanUuid, { url: craftyUrl, timestamp: Date.now() });
-  
+
   return craftyUrl;
 }
 
@@ -86,8 +86,8 @@ export function getSkinUrlSync(uuid: string): string {
     return `${CRAFTY_API_URL}/8667ba71b85a4004af54457a9734eed7`; // Steve por defecto
   }
 
-  const cleanUuid = uuid.replace(/-/g, '');
-  
+  const cleanUuid = uuid.replace(/-/g, "");
+
   // Verificar cache
   const cached = skinCache.get(cleanUuid);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
@@ -101,9 +101,11 @@ export function getSkinUrlSync(uuid: string): string {
 /**
  * Obtiene información del skin desde la API de SkinRestorer
  */
-export async function getSkinInfo(uuid: string): Promise<{ hasCustomSkin: boolean; skinUrl: string }> {
+export async function getSkinInfo(
+  uuid: string
+): Promise<{ hasCustomSkin: boolean; skinUrl: string }> {
   const skinUrl = await getSkinUrl(uuid);
-  const hasCustomSkin = !skinUrl.includes('crafty.gg');
+  const hasCustomSkin = !skinUrl.includes("crafty.gg");
 
   return {
     hasCustomSkin,
@@ -123,8 +125,10 @@ export function clearSkinCache(): void {
  */
 export function isConsoleUuid(uuid: string | null | undefined): boolean {
   if (!uuid) return false;
-  const cleanUuid = uuid.replace(/-/g, '').toLowerCase();
-  return cleanUuid === '00000000000000000000000000000000' || 
-         cleanUuid === '0' ||
-         uuid.toLowerCase() === 'console';
+  const cleanUuid = uuid.replace(/-/g, "").toLowerCase();
+  return (
+    cleanUuid === "00000000000000000000000000000000" ||
+    cleanUuid === "0" ||
+    uuid.toLowerCase() === "console"
+  );
 }

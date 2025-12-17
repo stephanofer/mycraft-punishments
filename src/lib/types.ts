@@ -1,7 +1,7 @@
 /**
  * Type definitions for the punishment system
  */
-import type { RowDataPacket } from 'mysql2';
+import type { RowDataPacket } from "mysql2";
 
 // Base punishment interface (common fields across all punishment types)
 export interface BasePunishment extends RowDataPacket {
@@ -60,7 +60,7 @@ export interface HistoryEntry extends RowDataPacket {
 }
 
 // Punishment type enum
-export type PunishmentType = 'ban' | 'mute' | 'warning' | 'kick';
+export type PunishmentType = "ban" | "mute" | "warning" | "kick";
 
 // Union type for any punishment
 export type Punishment = Ban | Mute | Warning | Kick;

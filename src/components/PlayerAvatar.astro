@@ -1,92 +1,122 @@
 ---
-import type { PunishmentType } from '../lib/types';
-import { getSkinUrlSync, isConsoleUuid } from '../lib/skins';
+import type { PunishmentType } from "../lib/types";
+import { getSkinUrlSync, isConsoleUuid } from "../lib/skins";
 
 interface Props {
   uuid: string | null;
   name: string;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: "sm" | "md" | "lg" | "xl";
   showName?: boolean;
   href?: string;
   type?: PunishmentType;
   skinUuid?: string | null;
 }
 
-const { 
-  uuid, 
-  name, 
-  size = 'md',
+const {
+  uuid,
+  name,
+  size = "md",
   showName = false,
   href,
   type,
-  skinUuid
+  skinUuid,
 } = Astro.props;
 
 const sizes = {
-  sm: { mobile: 'w-10 h-10', desktop: 'sm:w-10 sm:h-10', text: 'text-sm', container: 'gap-2', padding: 'p-1' },
-  md: { mobile: 'w-12 h-12', desktop: 'sm:w-14 sm:h-14', text: 'text-sm', container: 'gap-3', padding: 'p-1.5' },
-  lg: { mobile: 'w-14 h-14', desktop: 'sm:w-16 sm:h-16', text: 'text-base', container: 'gap-4', padding: 'p-1.5' },
-  xl: { mobile: 'w-20 h-20', desktop: 'sm:w-24 sm:h-24', text: 'text-lg', container: 'gap-5', padding: 'p-2' },
+  sm: {
+    mobile: "w-10 h-10",
+    desktop: "sm:w-10 sm:h-10",
+    text: "text-sm",
+    container: "gap-2",
+    padding: "p-1",
+  },
+  md: {
+    mobile: "w-12 h-12",
+    desktop: "sm:w-14 sm:h-14",
+    text: "text-sm",
+    container: "gap-3",
+    padding: "p-1.5",
+  },
+  lg: {
+    mobile: "w-14 h-14",
+    desktop: "sm:w-16 sm:h-16",
+    text: "text-base",
+    container: "gap-4",
+    padding: "p-1.5",
+  },
+  xl: {
+    mobile: "w-20 h-20",
+    desktop: "sm:w-24 sm:h-24",
+    text: "text-lg",
+    container: "gap-5",
+    padding: "p-2",
+  },
 };
 
 const sizeConfig = sizes[size];
 
 const isConsole = isConsoleUuid(uuid);
-const skinUrl = isConsole 
-  ? '/images/console.png' 
-  : getSkinUrlSync(skinUuid || uuid || '');
+const skinUrl = isConsole
+  ? "/images/console.png"
+  : getSkinUrlSync(skinUuid || uuid || "");
 
-const Element = href ? 'a' : 'div';
+const Element = href ? "a" : "div";
 ---
 
-<Element 
+<Element
   href={href}
   class:list={[
     "flex items-center",
     sizeConfig.container,
-    href && "hover:opacity-80 transition-opacity group"
+    href && "hover:opacity-80 transition-opacity group",
   ]}
 >
-  <div 
+  <div
     class:list={[
       "relative flex-shrink-0 rounded-xl bg-zinc-800/80 overflow-hidden",
       sizeConfig.mobile,
       sizeConfig.desktop,
-      sizeConfig.padding
+      sizeConfig.padding,
     ]}
   >
-    {isConsole ? (
-      <div class="w-full h-full flex items-center justify-center text-2xl">
-        🖥️
-      </div>
-    ) : (
-      <img
-        src={skinUrl}
-        alt={name}
-        class="w-full h-full object-contain pixelated transition-transform group-hover:scale-105"
-        loading="lazy"
-        onerror="this.src='/images/steve.png'"
-      />
-    )}
-    {href && (
-      <div class="absolute inset-0 bg-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-    )}
+    {
+      isConsole ? (
+        <div class="w-full h-full flex items-center justify-center text-2xl">
+          🖥️
+        </div>
+      ) : (
+        <img
+          src={skinUrl}
+          alt={name}
+          class="w-full h-full object-contain pixelated transition-transform group-hover:scale-105"
+          loading="lazy"
+          onerror="this.src='/images/steve.png'"
+        />
+      )
+    }
+    {
+      href && (
+        <div class="absolute inset-0 bg-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+      )
+    }
   </div>
 
-  {showName && (
-    <div class="flex flex-col min-w-0">
-      <span class:list={[
-        "font-medium text-white truncate",
-        sizeConfig.text,
-        href && "group-hover:text-purple-400 transition-colors"
-      ]}>
-        {name}
-      </span>
-      {type && (
-        <span class="text-xs text-zinc-500 capitalize">{type}</span>
-      )}
-    </div>
-  )}
+  {
+    showName && (
+      <div class="flex flex-col min-w-0">
+        <span
+          class:list={[
+            "font-medium text-white truncate",
+            sizeConfig.text,
+            href && "group-hover:text-purple-400 transition-colors",
+          ]}
+        >
+          {name}
+        </span>
+        {type && <span class="text-xs text-zinc-500 capitalize">{type}</span>}
+      </div>
+    )
+  }
 </Element>
 
 <style>

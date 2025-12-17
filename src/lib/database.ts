@@ -1,44 +1,43 @@
-
-import mysql from 'mysql2/promise';
-import type { Pool, PoolConnection, RowDataPacket } from 'mysql2/promise';
+import mysql from "mysql2/promise";
+import type { Pool, PoolConnection, RowDataPacket } from "mysql2/promise";
 
 let pool: Pool | null = null;
 
 const getPool = (): Pool => {
   if (!pool) {
     pool = mysql.createPool({
-      host: import.meta.env.DB_HOST || 'localhost',
-      port: parseInt(import.meta.env.DB_PORT || '3306'),
+      host: import.meta.env.DB_HOST || "localhost",
+      port: parseInt(import.meta.env.DB_PORT || "3306"),
       user: import.meta.env.DB_USERNAME,
       password: import.meta.env.DB_PASSWORD,
       database: import.meta.env.DB_DATABASE,
-      
+
       waitForConnections: true,
       connectionLimit: 5,
       maxIdle: 5,
-      idleTimeout: 60000, 
+      idleTimeout: 60000,
       queueLimit: 0,
       enableKeepAlive: true,
       keepAliveInitialDelay: 10000,
-      
+
       namedPlaceholders: true,
-      
-      timezone: 'Z',
-      
-      charset: 'utf8mb4',
+
+      timezone: "Z",
+
+      charset: "utf8mb4",
     });
   }
   return pool;
 };
 
 export const TABLES = {
-  bans: 'litebans_bans',
-  mutes: 'litebans_mutes',
-  warnings: 'litebans_warnings',
-  kicks: 'litebans_kicks',
-  history: 'litebans_history',
-  config: 'litebans_config',
-  servers: 'litebans_servers',
+  bans: "litebans_bans",
+  mutes: "litebans_mutes",
+  warnings: "litebans_warnings",
+  kicks: "litebans_kicks",
+  history: "litebans_history",
+  config: "litebans_config",
+  servers: "litebans_servers",
 } as const;
 
 export type TableName = keyof typeof TABLES;
@@ -52,12 +51,12 @@ export async function query<T extends RowDataPacket[]>(
   params: Record<string, unknown> = {}
 ): Promise<T> {
   const pool = getPool();
-  
+
   try {
     const [rows] = await pool.execute<T>(sql, params);
     return rows;
   } catch (error) {
-    console.error('Database query error:', error);
+    console.error("Database query error:", error);
     throw error;
   }
 }
@@ -69,12 +68,12 @@ export async function simpleQuery<T extends RowDataPacket[]>(
   sql: string
 ): Promise<T> {
   const pool = getPool();
-  
+
   try {
     const [rows] = await pool.query<T>(sql);
     return rows;
   } catch (error) {
-    console.error('Database query error:', error);
+    console.error("Database query error:", error);
     throw error;
   }
 }

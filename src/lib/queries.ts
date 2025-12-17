@@ -2,14 +2,20 @@
  * Punishment queries service
  * Optimized for performance with prepared statements and efficient pagination
  */
-import { query, TABLES } from './database';
-import type { 
-  Ban, Mute, Warning, Kick, 
-  HistoryEntry, PaginatedResult, 
-  PunishmentType, PlayerStats, StaffStats,
-  PunishmentWithType
-} from './types';
-import type { RowDataPacket } from 'mysql2';
+import { query, TABLES } from "./database";
+import type {
+  Ban,
+  Mute,
+  Warning,
+  Kick,
+  HistoryEntry,
+  PaginatedResult,
+  PunishmentType,
+  PlayerStats,
+  StaffStats,
+  PunishmentWithType,
+} from "./types";
+import type { RowDataPacket } from "mysql2";
 
 // Default items per page
 const DEFAULT_PER_PAGE = 15;
@@ -36,19 +42,19 @@ export async function getBans(
   showInactive: boolean = true
 ): Promise<PaginatedResult<Ban>> {
   const offset = (page - 1) * perPage;
-  
+
   let whereClause = "WHERE uuid IS NOT NULL AND uuid <> '#offline#'";
   if (!showInactive) {
     const now = Date.now();
     whereClause += ` AND active = 1 AND (until < 1 OR until > ${now})`;
   }
-  
+
   // Count total
   const countResult = await query<RowDataPacket[]>(
     `SELECT COUNT(*) as total FROM ${TABLES.bans} ${whereClause}`
   );
   const total = (countResult[0] as any).total;
-  
+
   // Get paginated data
   const data = await query<Ban[]>(
     `SELECT ${PUNISHMENT_COLUMNS} ${REMOVABLE_COLUMNS}
@@ -58,7 +64,7 @@ export async function getBans(
      LIMIT :limit OFFSET :offset`,
     { limit: perPage, offset }
   );
-  
+
   return createPaginatedResult(data, total, page, perPage);
 }
 
@@ -71,18 +77,18 @@ export async function getMutes(
   showInactive: boolean = true
 ): Promise<PaginatedResult<Mute>> {
   const offset = (page - 1) * perPage;
-  
+
   let whereClause = "WHERE uuid IS NOT NULL AND uuid <> '#offline#'";
   if (!showInactive) {
     const now = Date.now();
     whereClause += ` AND active = 1 AND (until < 1 OR until > ${now})`;
   }
-  
+
   const countResult = await query<RowDataPacket[]>(
     `SELECT COUNT(*) as total FROM ${TABLES.mutes} ${whereClause}`
   );
   const total = (countResult[0] as any).total;
-  
+
   const data = await query<Mute[]>(
     `SELECT ${PUNISHMENT_COLUMNS} ${REMOVABLE_COLUMNS}
      FROM ${TABLES.mutes} 
@@ -91,7 +97,7 @@ export async function getMutes(
      LIMIT :limit OFFSET :offset`,
     { limit: perPage, offset }
   );
-  
+
   return createPaginatedResult(data, total, page, perPage);
 }
 
@@ -104,18 +110,18 @@ export async function getWarnings(
   showInactive: boolean = true
 ): Promise<PaginatedResult<Warning>> {
   const offset = (page - 1) * perPage;
-  
+
   let whereClause = "WHERE uuid IS NOT NULL AND uuid <> '#offline#'";
   if (!showInactive) {
     const now = Date.now();
     whereClause += ` AND active = 1 AND (until < 1 OR until > ${now})`;
   }
-  
+
   const countResult = await query<RowDataPacket[]>(
     `SELECT COUNT(*) as total FROM ${TABLES.warnings} ${whereClause}`
   );
   const total = (countResult[0] as any).total;
-  
+
   const data = await query<Warning[]>(
     `SELECT ${PUNISHMENT_COLUMNS} ${REMOVABLE_COLUMNS}, CAST(warned AS UNSIGNED) AS warned
      FROM ${TABLES.warnings} 
@@ -124,7 +130,7 @@ export async function getWarnings(
      LIMIT :limit OFFSET :offset`,
     { limit: perPage, offset }
   );
-  
+
   return createPaginatedResult(data, total, page, perPage);
 }
 
@@ -136,14 +142,14 @@ export async function getKicks(
   perPage: number = DEFAULT_PER_PAGE
 ): Promise<PaginatedResult<Kick>> {
   const offset = (page - 1) * perPage;
-  
+
   const whereClause = "WHERE uuid IS NOT NULL AND uuid <> '#offline#'";
-  
+
   const countResult = await query<RowDataPacket[]>(
     `SELECT COUNT(*) as total FROM ${TABLES.kicks} ${whereClause}`
   );
   const total = (countResult[0] as any).total;
-  
+
   const data = await query<Kick[]>(
     `SELECT ${PUNISHMENT_COLUMNS}
      FROM ${TABLES.kicks} 
@@ -152,7 +158,7 @@ export async function getKicks(
      LIMIT :limit OFFSET :offset`,
     { limit: perPage, offset }
   );
-  
+
   return createPaginatedResult(data, total, page, perPage);
 }
 
@@ -164,16 +170,17 @@ export async function getPunishmentById(
   id: number
 ): Promise<Ban | Mute | Warning | Kick | null> {
   const table = getTableForType(type);
-  const extraColumns = type === 'kick' ? '' : REMOVABLE_COLUMNS;
-  const warnedColumn = type === 'warning' ? ', CAST(warned AS UNSIGNED) AS warned' : '';
-  
+  const extraColumns = type === "kick" ? "" : REMOVABLE_COLUMNS;
+  const warnedColumn =
+    type === "warning" ? ", CAST(warned AS UNSIGNED) AS warned" : "";
+
   const result = await query<any[]>(
     `SELECT ${PUNISHMENT_COLUMNS} ${extraColumns} ${warnedColumn}
      FROM ${table} 
      WHERE id = :id`,
     { id }
   );
-  
+
   return result[0] || null;
 }
 
@@ -188,7 +195,7 @@ export async function getPlayerName(uuid: string): Promise<string | null> {
      LIMIT 1`,
     { uuid }
   );
-  
+
   return result[0]?.name || null;
 }
 
@@ -201,7 +208,7 @@ export async function getPlayerHistory(
   perPage: number = DEFAULT_PER_PAGE
 ): Promise<PaginatedResult<PunishmentWithType>> {
   const offset = (page - 1) * perPage;
-  
+
   // Get counts from all tables in a single query (optimized)
   const countResult = await query<RowDataPacket[]>(
     `SELECT 
@@ -212,7 +219,7 @@ export async function getPlayerHistory(
     { uuid }
   );
   const total = (countResult[0] as any).total;
-  
+
   // Use UNION to get all punishments sorted by time
   // This is more efficient than multiple queries
   const allPunishments = await query<any[]>(
@@ -232,12 +239,12 @@ export async function getPlayerHistory(
      LIMIT :limit OFFSET :offset`,
     { uuid, limit: perPage, offset }
   );
-  
-  const data: PunishmentWithType[] = allPunishments.map(row => ({
+
+  const data: PunishmentWithType[] = allPunishments.map((row) => ({
     type: row.punishment_type as PunishmentType,
-    data: row
+    data: row,
   }));
-  
+
   return createPaginatedResult(data, total, page, perPage);
 }
 
@@ -250,7 +257,7 @@ export async function getStaffHistory(
   perPage: number = DEFAULT_PER_PAGE
 ): Promise<PaginatedResult<PunishmentWithType>> {
   const offset = (page - 1) * perPage;
-  
+
   // Get counts from all tables
   const countResult = await query<RowDataPacket[]>(
     `SELECT 
@@ -261,7 +268,7 @@ export async function getStaffHistory(
     { uuid }
   );
   const total = (countResult[0] as any).total;
-  
+
   // Use UNION for efficiency - ALL columns must match across all selects
   const allPunishments = await query<any[]>(
     `(SELECT ${PUNISHMENT_COLUMNS} ${REMOVABLE_COLUMNS}, NULL as warned, 'ban' as punishment_type
@@ -280,12 +287,12 @@ export async function getStaffHistory(
      LIMIT :limit OFFSET :offset`,
     { uuid, limit: perPage, offset }
   );
-  
-  const data: PunishmentWithType[] = allPunishments.map(row => ({
+
+  const data: PunishmentWithType[] = allPunishments.map((row) => ({
     type: row.punishment_type as PunishmentType,
-    data: row
+    data: row,
   }));
-  
+
   return createPaginatedResult(data, total, page, perPage);
 }
 
@@ -301,11 +308,11 @@ export async function searchPlayer(name: string): Promise<HistoryEntry | null> {
      LIMIT 1`,
     { name }
   );
-  
+
   if (result.length > 0) {
     return result[0];
   }
-  
+
   // Try case-insensitive search
   result = await query<HistoryEntry[]>(
     `SELECT * FROM ${TABLES.history} 
@@ -314,14 +321,16 @@ export async function searchPlayer(name: string): Promise<HistoryEntry | null> {
      LIMIT 1`,
     { name }
   );
-  
+
   return result[0] || null;
 }
 
 /**
  * Search for a player by UUID
  */
-export async function searchPlayerByUuid(uuid: string): Promise<HistoryEntry | null> {
+export async function searchPlayerByUuid(
+  uuid: string
+): Promise<HistoryEntry | null> {
   const result = await query<HistoryEntry[]>(
     `SELECT * FROM ${TABLES.history} 
      WHERE uuid = :uuid 
@@ -329,17 +338,19 @@ export async function searchPlayerByUuid(uuid: string): Promise<HistoryEntry | n
      LIMIT 1`,
     { uuid }
   );
-  
+
   return result[0] || null;
 }
 
 /**
  * Get player statistics
  */
-export async function getPlayerStats(uuid: string): Promise<PlayerStats | null> {
+export async function getPlayerStats(
+  uuid: string
+): Promise<PlayerStats | null> {
   const name = await getPlayerName(uuid);
   if (!name) return null;
-  
+
   // Get all stats in a single optimized query
   const statsResult = await query<RowDataPacket[]>(
     `SELECT 
@@ -352,7 +363,7 @@ export async function getPlayerStats(uuid: string): Promise<PlayerStats | null> 
       (SELECT COUNT(*) FROM ${TABLES.kicks} WHERE uuid = :uuid) as totalKicks`,
     { uuid }
   );
-  
+
   // Get first and last seen
   const seenResult = await query<RowDataPacket[]>(
     `SELECT MIN(date) as firstSeen, MAX(date) as lastSeen 
@@ -360,10 +371,10 @@ export async function getPlayerStats(uuid: string): Promise<PlayerStats | null> 
      WHERE uuid = :uuid`,
     { uuid }
   );
-  
+
   const stats = statsResult[0] as any;
   const seen = seenResult[0] as any;
-  
+
   return {
     uuid,
     name,
@@ -385,7 +396,7 @@ export async function getPlayerStats(uuid: string): Promise<PlayerStats | null> 
 export async function getStaffStats(uuid: string): Promise<StaffStats | null> {
   const name = await getPlayerName(uuid);
   if (!name) return null;
-  
+
   const statsResult = await query<RowDataPacket[]>(
     `SELECT 
       (SELECT COUNT(*) FROM ${TABLES.bans} WHERE banned_by_uuid = :uuid) as totalBansIssued,
@@ -394,9 +405,9 @@ export async function getStaffStats(uuid: string): Promise<StaffStats | null> {
       (SELECT COUNT(*) FROM ${TABLES.kicks} WHERE banned_by_uuid = :uuid) as totalKicksIssued`,
     { uuid }
   );
-  
+
   const stats = statsResult[0] as any;
-  
+
   return {
     uuid,
     name,
@@ -428,17 +439,21 @@ export async function getGlobalStats(): Promise<{
       (SELECT COUNT(*) FROM ${TABLES.kicks}) as totalKicks`,
     {}
   );
-  
+
   return result[0] as any;
 }
 
 // Helper functions
 function getTableForType(type: PunishmentType): string {
   switch (type) {
-    case 'ban': return TABLES.bans;
-    case 'mute': return TABLES.mutes;
-    case 'warning': return TABLES.warnings;
-    case 'kick': return TABLES.kicks;
+    case "ban":
+      return TABLES.bans;
+    case "mute":
+      return TABLES.mutes;
+    case "warning":
+      return TABLES.warnings;
+    case "kick":
+      return TABLES.kicks;
   }
 }
 

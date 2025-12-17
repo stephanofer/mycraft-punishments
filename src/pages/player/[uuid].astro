@@ -1,21 +1,25 @@
 ---
-import EmptyState from '../../components/EmptyState.astro';
-import Pagination from '../../components/Pagination.astro';
-import PunishmentCard from '../../components/PunishmentCard.astro';
-import Layout from '../../layouts/Layout.astro';
-import { getPlayerHistory, getPlayerName, getPlayerStats } from '../../lib/queries';
-import { getSkinUrlSync } from '../../lib/skins';
-import { dashifyUuid, formatDate } from '../../lib/utils';
+import EmptyState from "../../components/EmptyState.astro";
+import Pagination from "../../components/Pagination.astro";
+import PunishmentCard from "../../components/PunishmentCard.astro";
+import Layout from "../../layouts/Layout.astro";
+import {
+  getPlayerHistory,
+  getPlayerName,
+  getPlayerStats,
+} from "../../lib/queries";
+import { getSkinUrlSync } from "../../lib/skins";
+import { dashifyUuid, formatDate } from "../../lib/utils";
 
 const { uuid } = Astro.params;
 
 if (!uuid) {
-  return Astro.redirect('/search');
+  return Astro.redirect("/search");
 }
 
 const normalizedUuid = dashifyUuid(uuid);
 
-const page = Math.max(1, parseInt(Astro.url.searchParams.get('page') || '1'));
+const page = Math.max(1, parseInt(Astro.url.searchParams.get("page") || "1"));
 const perPage = 15;
 
 let playerStats;
@@ -25,39 +29,62 @@ let error = null;
 try {
   [playerStats, history] = await Promise.all([
     getPlayerStats(normalizedUuid),
-    getPlayerHistory(normalizedUuid, page, perPage)
+    getPlayerHistory(normalizedUuid, page, perPage),
   ]);
 } catch (e) {
-  console.error('Error fetching player data:', e);
+  console.error("Error fetching player data:", e);
   error = e;
 }
 
 if (!playerStats) {
-  return Astro.redirect('/search?error=not-found');
+  return Astro.redirect("/search?error=not-found");
 }
 
 const historyWithNames = await Promise.all(
   (history?.data || []).map(async (item) => ({
     ...item,
-    playerName: await getPlayerName(item.data.uuid || '') || playerStats.name
+    playerName: (await getPlayerName(item.data.uuid || "")) || playerStats.name,
   }))
 );
 
-const totalPunishments = playerStats.totalBans + playerStats.totalMutes + playerStats.totalWarnings + playerStats.totalKicks;
-const hasActivePunishment = playerStats.activeBans > 0 || playerStats.activeMutes > 0 || playerStats.activeWarnings > 0;
+const totalPunishments =
+  playerStats.totalBans +
+  playerStats.totalMutes +
+  playerStats.totalWarnings +
+  playerStats.totalKicks;
+const hasActivePunishment =
+  playerStats.activeBans > 0 ||
+  playerStats.activeMutes > 0 ||
+  playerStats.activeWarnings > 0;
 ---
 
-<Layout title={`${playerStats.name} - Perfil`} description={`Historial de sanciones de ${playerStats.name}`}>
+<Layout
+  title={`${playerStats.name} - Perfil`}
+  description={`Historial de sanciones de ${playerStats.name}`}
+>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <section class="mb-8 animate-fade-in">
-      <div class="relative rounded-3xl bg-gradient-to-br from-zinc-900 to-zinc-950 border border-zinc-800 overflow-hidden">
-        <div class="absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:32px_32px]"></div>
-        
-        <div class="absolute top-0 right-0 w-96 h-96 bg-purple-600/10 rounded-full blur-[100px]"></div>
-        <div class="absolute bottom-0 left-0 w-64 h-64 bg-blue-600/10 rounded-full blur-[80px]"></div>
+      <div
+        class="relative rounded-3xl bg-gradient-to-br from-zinc-900 to-zinc-950 border border-zinc-800 overflow-hidden"
+      >
+        <div
+          class="absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:32px_32px]"
+        >
+        </div>
+
+        <div
+          class="absolute top-0 right-0 w-96 h-96 bg-purple-600/10 rounded-full blur-[100px]"
+        >
+        </div>
+        <div
+          class="absolute bottom-0 left-0 w-64 h-64 bg-blue-600/10 rounded-full blur-[80px]"
+        >
+        </div>
 
         <div class="relative p-6 sm:p-8">
-          <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+          <div
+            class="flex flex-col sm:flex-row items-center sm:items-start gap-6"
+          >
             <div class="relative group">
               <img
                 src={getSkinUrlSync(normalizedUuid)}
@@ -66,36 +93,61 @@ const hasActivePunishment = playerStats.activeBans > 0 || playerStats.activeMute
                 height="128"
                 class="p-2 rounded-2xl pixelated bg-zinc-800 shadow-2xl shadow-purple-500/10 group-hover:scale-105 transition-transform duration-300"
               />
-              
-              {hasActivePunishment && (
-                <div class="absolute -top-2 -right-2 flex items-center gap-1 px-2 py-1 rounded-lg bg-red-500 text-white text-xs font-medium shadow-lg">
-                  <span class="relative flex h-2 w-2">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-                  </span>
-                  Sancionado
-                </div>
-              )}
+
+              {
+                hasActivePunishment && (
+                  <div class="absolute -top-2 -right-2 flex items-center gap-1 px-2 py-1 rounded-lg bg-red-500 text-white text-xs font-medium shadow-lg">
+                    <span class="relative flex h-2 w-2">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+                      <span class="relative inline-flex rounded-full h-2 w-2 bg-white" />
+                    </span>
+                    Sancionado
+                  </div>
+                )
+              }
             </div>
 
             <div class="flex-1 text-center sm:text-left">
-              <h1 class="text-3xl sm:text-4xl font-clash font-bold text-white mb-2">
+              <h1
+                class="text-3xl sm:text-4xl font-clash font-bold text-white mb-2"
+              >
                 {playerStats.name}
               </h1>
 
-              <div class="flex flex-wrap justify-center sm:justify-start gap-4 text-sm">
-                  <div class="flex items-center gap-2 text-zinc-400">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <span>Primera vez: No se encontró</span>
-                  </div>
-                  <div class="flex items-center gap-2 text-zinc-400">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>Última vez: No se encontró</span>
-                  </div>
+              <div
+                class="flex flex-wrap justify-center sm:justify-start gap-4 text-sm"
+              >
+                <div class="flex items-center gap-2 text-zinc-400">
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    ></path>
+                  </svg>
+                  <span>Primera vez: No se encontró</span>
+                </div>
+                <div class="flex items-center gap-2 text-zinc-400">
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <span>Última vez: No se encontró</span>
+                </div>
               </div>
             </div>
 
@@ -116,37 +168,43 @@ const hasActivePunishment = playerStats.activeBans > 0 || playerStats.activeMute
           Historial de Sanciones
         </h2>
         <span class="text-sm text-zinc-500">
-          {history?.total || 0} en total · Página {page} de {history?.totalPages || 1}
+          {history?.total || 0} en total · Página {page} de {
+            history?.totalPages || 1
+          }
         </span>
       </div>
 
-      {error ? (
-        <EmptyState type="error" message="Error al cargar el historial." />
-      ) : historyWithNames.length === 0 ? (
-        <EmptyState type="empty" message="Este jugador no tiene sanciones." />
-      ) : (
-        <div class="space-y-3">
-          {historyWithNames.map((item, index) => (
-            <div class={`scroll-reveal stagger-${Math.min(index + 1, 10)}`}>
-              <PunishmentCard 
-                punishment={item.data} 
-                type={item.type} 
-                showPlayer={false}
-              />
-            </div>
-          ))}
-        </div>
-      )}
+      {
+        error ? (
+          <EmptyState type="error" message="Error al cargar el historial." />
+        ) : historyWithNames.length === 0 ? (
+          <EmptyState type="empty" message="Este jugador no tiene sanciones." />
+        ) : (
+          <div class="space-y-3">
+            {historyWithNames.map((item, index) => (
+              <div class={`scroll-reveal stagger-${Math.min(index + 1, 10)}`}>
+                <PunishmentCard
+                  punishment={item.data}
+                  type={item.type}
+                  showPlayer={false}
+                />
+              </div>
+            ))}
+          </div>
+        )
+      }
 
-      {history && history.totalPages > 1 && (
-        <div class="mt-8">
-          <Pagination 
-            currentPage={page}
-            totalPages={history.totalPages}
-            baseUrl={Astro.url.pathname}
-          />
-        </div>
-      )}
+      {
+        history && history.totalPages > 1 && (
+          <div class="mt-8">
+            <Pagination
+              currentPage={page}
+              totalPages={history.totalPages}
+              baseUrl={Astro.url.pathname}
+            />
+          </div>
+        )
+      }
     </section>
   </div>
 </Layout>

@@ -89,7 +89,8 @@ const Element = href ? "a" : "div";
           src={skinUrl}
           alt={name}
           class="w-full h-full object-contain pixelated transition-transform group-hover:scale-105"
-          loading="lazy"
+          loading={size === 'lg' || size === 'xl' ? 'eager' : 'lazy'}
+          fetchpriority={size === 'lg' || size === 'xl' ? 'high' : 'auto'}
           onerror="this.src='/images/steve.png'"
         />
       )
